@@ -25,20 +25,21 @@ from models.segmentation import (
 
 
 st.set_page_config(
+    page_title="AI Business Agent",
     layout="wide"
 )
 
 
 if "df" not in st.session_state:
-    st.session_state.df=None
+    st.session_state.df = None
 
 
 if "segmented" not in st.session_state:
-    st.session_state.segmented=None
+    st.session_state.segmented = None
 
 
 st.sidebar.title(
-    "AI Business Agent"
+    "📊 AI Business Agent"
 )
 
 
@@ -48,13 +49,11 @@ page = st.sidebar.radio(
 
     [
 
-        "Upload",
+        "Upload Data",
 
-        "Segmentation",
+        "Business Intelligence",
 
-        "Dashboard",
-
-        "Insights"
+        "AI Assistant"
 
     ]
 
@@ -62,156 +61,132 @@ page = st.sidebar.radio(
 
 
 st.title(
-    "📊 AI Business Insight Platform"
+    "AI Customer Segmentation & Business Insights"
 )
 
 
+# ------------------
+# UPLOAD
+# ------------------
 
-if page=="Upload":
+if page == "Upload Data":
 
     file = st.file_uploader(
-
-        "Upload Dataset",
-
+        "Upload CSV / XLSX",
         type=[
             "csv",
             "xlsx"
         ]
-
     )
 
     if file:
 
-        st.session_state.df = (
-            load_dataset(
-                file
-            )
+        df = load_dataset(
+            file
         )
+
+        st.session_state.df = df
 
         st.success(
-            "Dataset Uploaded"
+            "Dataset uploaded."
+        )
+
+        show_summary(
+            dataset_summary(df)
+        )
+
+        st.dataframe(
+            df,
+            use_container_width=True
         )
 
 
+# ------------------
+# BUSINESS INTELLIGENCE
+# ------------------
 
-if st.session_state.df is not None:
+elif page == "Business Intelligence":
 
-    show_summary(
-
-        dataset_summary(
-
-            st.session_state.df
-
-        )
-
-    )
-
-
-
-if (
-
-page=="Segmentation"
-
-and
-
-st.session_state.df is not None
-
-):
-
-    if st.button(
-
-        "Generate Segments"
-
-    ):
-
-        cleaned = (
-
-            clean_data(
-
-                st.session_state.df
-
-            )
-
-        )
-
-
-        features,_=(
-
-            prepare_features(
-
-                cleaned
-
-            )
-
-        )
-
-
-        segmented=(
-
-            run_segmentation(
-
-                cleaned,
-
-                features
-
-            )
-
-        )
-
-
-        st.session_state.segmented=segmented
-
-
-        st.success(
-
-            "Segmentation Complete"
-
-        )
-
-
-
-if page=="Dashboard":
-
-    segmentation_dashboard(
-
-        st.session_state.segmented
-
-    )
-
-
-
-if page=="Insights":
-
-
-    if st.session_state.segmented is None:
+    if st.session_state.df is None:
 
         st.info(
-
-            "Generate segmentation first."
-
+            "Upload dataset first."
         )
-
 
     else:
 
-        st.subheader(
+        if st.button(
+            "Analyze Business"
+        ):
 
-            "AI Generated Insights"
+            with st.spinner(
+                "Analyzing..."
+            ):
 
-        )
+                cleaned = clean_data(
+                    st.session_state.df
+                )
 
 
-        insights=(
+                features,_=(
 
-            generate_business_insights(
+                    prepare_features(
+                        cleaned
+                    )
 
+                )
+
+
+                segmented = (
+
+                    run_segmentation(
+                        cleaned,
+                        features
+                    )
+
+                )
+
+
+                st.session_state.segmented = segmented
+
+
+        if st.session_state.segmented is not None:
+
+            st.success(
+                "Analysis Completed"
+            )
+
+            segmentation_dashboard(
                 st.session_state.segmented
+            )
+
+            st.divider()
+
+            st.subheader(
+                "AI Insights"
+            )
+
+            insights = (
+
+                generate_business_insights(
+
+                    st.session_state.segmented
+
+                )
 
             )
 
-        )
+            for i in insights:
+
+                st.info(i)
 
 
-        for i in insights:
+# ------------------
+# AI ASSISTANT
+# ------------------
 
-            st.success(i)
+elif page == "AI Assistant":
+
+    st.info(
+        "Coming next → RAG Chat"
+    )
