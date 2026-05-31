@@ -6,7 +6,8 @@ from utils.file_handler import (
 )
 
 from analytics.dashboard import (
-    show_summary
+    show_summary,
+    segmentation_dashboard
 )
 
 from utils.preprocessing import (
@@ -20,11 +21,17 @@ from models.segmentation import (
 
 
 st.set_page_config(
-    layout="wide"
+    layout="wide",
+    page_title="AI Business Agent"
 )
+
 
 if "df" not in st.session_state:
     st.session_state.df=None
+
+
+if "segmented" not in st.session_state:
+    st.session_state.segmented=None
 
 
 st.sidebar.title(
@@ -32,26 +39,42 @@ st.sidebar.title(
 )
 
 page = st.sidebar.radio(
+
     "Navigation",
+
     [
+
         "Upload",
-        "Segmentation"
+
+        "Segmentation",
+
+        "Dashboard"
+
     ]
+
 )
 
+
 st.title(
-    "📊 Customer Segmentation"
+    "📊 Business Insight Platform"
 )
+
 
 
 if page=="Upload":
 
     file = st.file_uploader(
-        "Upload",
+
+        "Upload Dataset",
+
         type=[
+
             "csv",
+
             "xlsx"
+
         ]
+
     )
 
     if file:
@@ -63,27 +86,22 @@ if page=="Upload":
         st.session_state.df=df
 
         st.success(
-            "Uploaded"
+            "Upload Successful"
         )
 
 
 
-if (
-    st.session_state.df
-    is not None
-):
-
-    df = st.session_state.df
-
-    st.subheader(
-        "Dataset"
-    )
+if st.session_state.df is not None:
 
     show_summary(
-        dataset_summary(df)
-    )
 
-    st.dataframe(df)
+        dataset_summary(
+
+            st.session_state.df
+
+        )
+
+    )
 
 
 
@@ -94,35 +112,60 @@ st.session_state.df
 is not None
 ):
 
-    st.subheader(
-        "Run Segmentation"
-    )
 
     if st.button(
-        "Start Analysis"
+
+        "Generate Segments"
+
     ):
 
-        cleaned = clean_data(
+        cleaned=clean_data(
+
             st.session_state.df
+
         )
 
-        features,_ = (
+
+        features,_=(
+
             prepare_features(
+
                 cleaned
+
             )
+
         )
 
-        segmented = (
+
+        segmented=(
+
             run_segmentation(
+
                 cleaned,
+
                 features
+
             )
+
         )
 
-        st.success(
-            "Completed"
-        )
+
+        st.session_state.segmented=segmented
+
 
         st.dataframe(
+
             segmented
+
         )
+
+
+
+if page=="Dashboard":
+
+
+    segmentation_dashboard(
+
+        st.session_state.segmented
+
+    )
