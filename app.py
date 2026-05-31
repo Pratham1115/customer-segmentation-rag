@@ -10,6 +10,10 @@ from analytics.dashboard import (
     segmentation_dashboard
 )
 
+from analytics.insights import (
+    generate_business_insights
+)
+
 from utils.preprocessing import (
     clean_data,
     prepare_features
@@ -21,8 +25,7 @@ from models.segmentation import (
 
 
 st.set_page_config(
-    layout="wide",
-    page_title="AI Business Agent"
+    layout="wide"
 )
 
 
@@ -38,6 +41,7 @@ st.sidebar.title(
     "AI Business Agent"
 )
 
+
 page = st.sidebar.radio(
 
     "Navigation",
@@ -48,7 +52,9 @@ page = st.sidebar.radio(
 
         "Segmentation",
 
-        "Dashboard"
+        "Dashboard",
+
+        "Insights"
 
     ]
 
@@ -56,7 +62,7 @@ page = st.sidebar.radio(
 
 
 st.title(
-    "📊 Business Insight Platform"
+    "📊 AI Business Insight Platform"
 )
 
 
@@ -68,25 +74,22 @@ if page=="Upload":
         "Upload Dataset",
 
         type=[
-
             "csv",
-
             "xlsx"
-
         ]
 
     )
 
     if file:
 
-        df = load_dataset(
-            file
+        st.session_state.df = (
+            load_dataset(
+                file
+            )
         )
 
-        st.session_state.df=df
-
         st.success(
-            "Upload Successful"
+            "Dataset Uploaded"
         )
 
 
@@ -106,12 +109,14 @@ if st.session_state.df is not None:
 
 
 if (
-page=="Segmentation"
-and
-st.session_state.df
-is not None
-):
 
+page=="Segmentation"
+
+and
+
+st.session_state.df is not None
+
+):
 
     if st.button(
 
@@ -119,9 +124,13 @@ is not None
 
     ):
 
-        cleaned=clean_data(
+        cleaned = (
 
-            st.session_state.df
+            clean_data(
+
+                st.session_state.df
+
+            )
 
         )
 
@@ -153,9 +162,9 @@ is not None
         st.session_state.segmented=segmented
 
 
-        st.dataframe(
+        st.success(
 
-            segmented
+            "Segmentation Complete"
 
         )
 
@@ -163,9 +172,46 @@ is not None
 
 if page=="Dashboard":
 
-
     segmentation_dashboard(
 
         st.session_state.segmented
 
     )
+
+
+
+if page=="Insights":
+
+
+    if st.session_state.segmented is None:
+
+        st.info(
+
+            "Generate segmentation first."
+
+        )
+
+
+    else:
+
+        st.subheader(
+
+            "AI Generated Insights"
+
+        )
+
+
+        insights=(
+
+            generate_business_insights(
+
+                st.session_state.segmented
+
+            )
+
+        )
+
+
+        for i in insights:
+
+            st.success(i)
