@@ -5,6 +5,15 @@ from utils.file_handler import (
     dataset_summary
 )
 
+from utils.preprocessing import (
+    clean_data,
+    prepare_features
+)
+
+from models.segmentation import (
+    run_segmentation
+)
+
 from analytics.dashboard import (
     show_summary,
     segmentation_dashboard
@@ -14,13 +23,8 @@ from analytics.insights import (
     generate_business_insights
 )
 
-from utils.preprocessing import (
-    clean_data,
-    prepare_features
-)
-
-from models.segmentation import (
-    run_segmentation
+from analytics.action_center import (
+    show_actions
 )
 
 from rag.rag_engine import (
@@ -34,19 +38,20 @@ from rag.gemini_chat import (
 
 
 st.set_page_config(
+    page_title="AI Business Agent",
     layout="wide"
 )
 
 
 defaults = {
 
-    "df":None,
+    "df": None,
 
-    "segmented":None,
+    "segmented": None,
 
-    "db":None,
+    "db": None,
 
-    "chat":[]
+    "chat": []
 
 }
 
@@ -55,18 +60,18 @@ for k in defaults:
 
     if k not in st.session_state:
 
-        st.session_state[k]=defaults[k]
+        st.session_state[k] = defaults[k]
 
 
-page=st.sidebar.radio(
+page = st.sidebar.radio(
 
     "Navigation",
 
     [
 
-        "Upload",
+        "Upload Data",
 
-        "Business",
+        "Business Intelligence",
 
         "AI Assistant"
 
@@ -76,17 +81,19 @@ page=st.sidebar.radio(
 
 
 st.title(
-    "📊 AI Business Agent"
+    "📊 AI Customer Segmentation & Business Insights"
 )
 
 
-# ----------------
+# -----------------
+# UPLOAD
+# -----------------
 
-if page=="Upload":
+if page == "Upload Data":
 
-    file=st.file_uploader(
+    file = st.file_uploader(
 
-        "Upload Dataset",
+        "Upload CSV/XLSX",
 
         type=[
 
@@ -101,14 +108,14 @@ if page=="Upload":
 
     if file:
 
-        df=load_dataset(
+        df = load_dataset(
             file
         )
 
-        st.session_state.df=df
+        st.session_state.df = df
 
         st.success(
-            "Upload Complete"
+            "Dataset uploaded."
         )
 
         show_summary(
@@ -116,37 +123,49 @@ if page=="Upload":
         )
 
 
-# ----------------
 
-elif page=="Business":
+# -----------------
+# BUSINESS
+# -----------------
+
+elif page == "Business Intelligence":
 
     if st.session_state.df is None:
 
-        st.warning(
-            "Upload dataset"
+        st.info(
+            "Upload dataset first."
         )
+
 
     else:
 
         if st.button(
-            "Analyze"
+            "Analyze Business"
         ):
 
-            cleaned=clean_data(
-                st.session_state.df
-            )
+            cleaned = (
 
+                clean_data(
 
-            features,_=(
+                    st.session_state.df
 
-                prepare_features(
-                    cleaned
                 )
 
             )
 
 
-            segmented=(
+            features, _ = (
+
+                prepare_features(
+
+                    cleaned
+
+                )
+
+            )
+
+
+            segmented = (
 
                 run_segmentation(
 
@@ -159,10 +178,10 @@ elif page=="Business":
             )
 
 
-            st.session_state.segmented=segmented
+            st.session_state.segmented = segmented
 
 
-            st.session_state.db=(
+            st.session_state.db = (
 
                 build_vector_db(
 
@@ -175,6 +194,11 @@ elif page=="Business":
 
         if st.session_state.segmented is not None:
 
+            st.success(
+                "Analysis Completed"
+            )
+
+
             segmentation_dashboard(
 
                 st.session_state.segmented
@@ -182,12 +206,15 @@ elif page=="Business":
             )
 
 
+            st.divider()
+
+
             st.subheader(
-                "Insights"
+                "AI Business Insights"
             )
 
 
-            for i in (
+            insights = (
 
                 generate_business_insights(
 
@@ -195,15 +222,29 @@ elif page=="Business":
 
                 )
 
-            ):
-
-                st.success(i)
+            )
 
 
-# ----------------
+            for i in insights:
 
-elif page=="AI Assistant":
+                st.info(i)
 
+
+            st.divider()
+
+
+            show_actions(
+
+                st.session_state.segmented
+
+            )
+
+
+# -----------------
+# AI CHAT
+# -----------------
+
+elif page == "AI Assistant":
 
     if st.session_state.db is None:
 
@@ -228,54 +269,56 @@ elif page=="AI Assistant":
             )
 
 
-        q=st.chat_input(
+        question = st.chat_input(
+
             "Ask business question"
+
         )
 
 
-        if q:
+        if question:
 
 
             st.chat_message(
+
                 "user"
+
             ).write(
-                q
-            )
 
-
-            st.session_state.chat.append(
-
-                {
-
-                    "role":"user",
-
-                    "content":q
-
-                }
+                question
 
             )
 
 
-            context=(
+            st.session_state.chat.append({
+
+                "role": "user",
+
+                "content": question
+
+            })
+
+
+            context = (
 
                 search_data(
 
                     st.session_state.db,
 
-                    q
+                    question
 
                 )
 
             )
 
 
-            answer=(
+            answer = (
 
                 ask_ai(
 
                     context,
 
-                    q,
+                    question,
 
                     st.session_state.chat
 
@@ -295,14 +338,10 @@ elif page=="AI Assistant":
             )
 
 
-            st.session_state.chat.append(
+            st.session_state.chat.append({
 
-                {
+                "role": "assistant",
 
-                    "role":"assistant",
+                "content": answer
 
-                    "content":answer
-
-                }
-
-            )
+            })
