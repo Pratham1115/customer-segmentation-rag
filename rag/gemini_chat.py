@@ -30,54 +30,79 @@ def ask_ai(
 ):
 
 
-    chat = ""
+    conversation = ""
 
 
-    for m in history:
+    for msg in history:
 
-        chat += (
+        conversation += (
 
-            f"{m['role']}: "
+            f"{msg['role']}: "
 
-            f"{m['content']}\n"
+            f"{msg['content']}\n"
 
         )
 
 
     prompt = f"""
+You are an AI Business Advisor.
 
-You are an expert business analyst.
+Your users are NOT data scientists.
+
+They are business owners.
+
+Use VERY SIMPLE language.
+
+Never mention:
+- embeddings
+- vectors
+- clustering
+- machine learning
+- segmentation algorithms
+
+Always explain insights like talking to a beginner.
+
+Use this EXACT structure:
+
+📌 Main Finding
+(1–2 sentences)
+
+📊 What This Means
+(simple explanation)
+
+🚀 Recommended Action
+(3 specific actions)
+
+⚠️ Risk Level
+(Low / Medium / High)
+
+💡 Example
+(real business example)
+
+Keep answers:
+- short
+- practical
+- clear
+- beginner friendly
 
 Business Data:
 
 {context}
 
-Conversation:
+Previous Conversation:
 
-{chat}
+{conversation}
 
-User:
+User Question:
 
 {question}
 
-Rules:
-
-Explain clearly.
-
-Use business language.
-
-Give recommendations.
-
+Generate answer.
 """
 
 
-    response = (
-
-        model.generate_content(
-            prompt
-        )
-
+    response = model.generate_content(
+        prompt
     )
-
 
     return response.text
